@@ -33,27 +33,29 @@ Notes_App/
 
 ## Database Schema
 ### users table
-CREATE TABLE users (
 
-id INT AUTO_INCREMENT PRIMARY KEY,
+    CREATE TABLE users (
 
-username VARCHAR(100) UNIQUE NOT NULL,
+    id INT AUTO_INCREMENT PRIMARY KEY,
 
-password_hash VARCHAR(255) NOT NULL
+    username VARCHAR(100) UNIQUE NOT NULL,
+
+    password_hash VARCHAR(255) NOT NULL
 );
 
 ### notes table
-CREATE TABLE notes (
 
-  id INT AUTO_INCREMENT PRIMARY KEY,  
+    CREATE TABLE notes (
+
+      id INT AUTO_INCREMENT PRIMARY KEY,  
   
-  user_id INT NOT NULL,        
+      user_id INT NOT NULL,        
   
-  content TEXT NOT NULL,
+      content TEXT NOT NULL,
   
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   
-  FOREIGN KEY (user_id) REFERENCES users(id)
+      FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 ## Setup Instructions
@@ -71,96 +73,94 @@ CREATE TABLE notes (
    
 3. Connect to EC2 Instance
 
-4. Create Directory under Home
-
-
-   mkdir -p /home/Application/Notes_App
-
-
-6. change directory to Notes_App
-
-
-     cd /home/Application/Notes_App
-
-
-7. Install Dependencies
+4. Create Directory under Home:
    
-    sudo dnf install -y python3 python3-pip mariadb mariadb-server git
+        mkdir -p /home/Application/Notes_App
+   
+5. change directory to Notes_App
 
-    pip3 install -r requirements.txt
+
+         cd /home/Application/Notes_App
+
+
+6. Install Dependencies
+   
+          sudo dnf install -y python3 python3-pip mariadb mariadb-server git
+
+          pip3 install -r requirements.txt
 
 7. Configure MariaDB
 
-   sudo systemctl start mariadb
+         sudo systemctl start mariadb
 
-   sudo mysql_secure_installation
+         sudo mysql_secure_installation
 
 #### Create database and user:
 
-    CREATE DATABASE notesdb;
+          CREATE DATABASE notesdb;
 
-    CREATE USER 'notesuser'@'localhost' IDENTIFIED BY 'StrongPassword123';
+          CREATE USER 'notesuser'@'localhost' IDENTIFIED BY 'StrongPassword123';
 
-    GRANT ALL PRIVILEGES ON notesdb.* TO 'notesuser'@'localhost';
+          GRANT ALL PRIVILEGES ON notesdb.* TO 'notesuser'@'localhost';
 
-    FLUSH PRIVILEGES;
+          FLUSH PRIVILEGES;
 
 8. Navigate to Notes_App directory and Create app.py file
    
-    touch app.py 
+        touch app.py 
 
 9. Paste the python Code in app.py file and save it
 
 10. Run the Application
   
-     python3 app.py
+         python3 app.py
 
 11.Access the app via browser:
 
-  http://<EC2_PUBLIC_IP>/
+      http://<EC2_PUBLIC_IP>/
 
 12.Create and Mount Backup EBS Volume
 
-  lsblk
+      lsblk
 
-  sudo mkfs.xfs /dev/nvme1n1
+      sudo mkfs.xfs /dev/nvme1n1
 
-  sudo mkdir /backup
+      sudo mkdir /backup
 
-  sudo mount /dev/nvme1n1 /backup
+      sudo mount /dev/nvme1n1 /backup
 
 #### Persist mount:
 
-  sudo blkid /dev/xvdf
+      sudo blkid /dev/xvdf
 
 #### Edit fstab:
 
-  sudo vim /etc/fstab
+      sudo vim /etc/fstab
 
  #### Add:
 
-  UUID= /backup xfs defaults 0 0
+      UUID= /backup xfs defaults 0 0
 
 13. Backup MariaDB to /backup
     
 ### Create Backup Script
 
-  sudo mkdir /backup/mariadb
+      sudo mkdir /backup/mariadb
 
-  sudo vim /usr/local/bin/db_backup.sh
+      sudo vim /usr/local/bin/db_backup.sh
 
-  #!/bin/bash
+      #!/bin/bash
 
-  DATE=$(date +%F_%H-%M)
+      DATE=$(date +%F_%H-%M)
 
-  mysqldump -u root -p'RootPassword' notesdb > /backup/db-backups/notesdb_$DATE.sql
+      mysqldump -u root -p'RootPassword' notesdb > /backup/db-backups/notesdb_$DATE.sql
 
-  sudo chmod +x /usr/local/bin/db_backup.sh
+      sudo chmod +x /usr/local/bin/db_backup.sh
 
 14. Automate Backup (Cron Job)
     
-  sudo crontab -e
+        sudo crontab -e
   
-  Daily backup at 2 AM:
+        Daily backup at 2 AM:
   
-  0 2 * * * /usr/local/bin/db_backup.sh
+        0 2 * * * /usr/local/bin/db_backup.sh
